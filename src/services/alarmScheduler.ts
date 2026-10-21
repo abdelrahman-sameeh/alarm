@@ -8,9 +8,10 @@ import { getSound } from '../data/sounds'
 import type { Alarm } from '../domain/alarm'
 import { nextAlarmDate, todayKey } from '../domain/alarm'
 import type { AlarmSettings } from '../domain/settings'
+import { formatArabicNumber, toArabicDigits } from '../utils/numbers'
 
 const IDS_KEY = 'alarm-masry:notification-ids'
-const ACTION_TYPE_ID = 'ALARM_CONTROLS_V2'
+const ACTION_TYPE_ID = 'ALARM_CONTROLS_V3'
 
 interface AlarmSoundsPlugin {
   ensureBundledChannel(options: { soundName: string; label: string }): Promise<{ channelId?: string }>
@@ -23,9 +24,9 @@ function isNative() {
   return Capacitor.isNativePlatform()
 }
 
-function notificationId(alarmId: number, dayOffset = 0, reminder = false) {
-  const safeAlarmId = Math.abs(alarmId) % 10_000_000
-  return safeAlarmId * 100 + (reminder ? 50 : 0) + dayOffset + 1
+function notificationId(alarmId: number, dayOffset = 0, reminder = false, ringIndex = 0) {
+  const safeAlarmId = Math.abs(alarmId) % 20_000_000
+  return safeAlarmId * 100 + (reminder ? 90 + dayOffset : dayOffset * 10 + ringIndex + 1)
 }
 
 function nextWeekOccurrence(hour: number, minute: number) {
@@ -39,14 +40,18 @@ function subtractMinutes(date: Date, minutes: number) {
   return new Date(date.getTime() - minutes * 60_000)
 }
 
-function weeklyReminderTime(day: number, hour: number, minute: number, minutesBefore: number) {
+function addMinutes(date: Date, minutes: number) {
+  return new Date(date.getTime() + minutes * 60_000)
+}
+
+function weeklyTime(day: number, hour: number, minute: number, minuteOffset: number) {
   const minutesInWeek = 7 * 24 * 60
   const alarmMinute = day * 24 * 60 + hour * 60 + minute
-  const reminderMinute = (alarmMinute - minutesBefore + minutesInWeek) % minutesInWeek
+  const scheduledMinute = (alarmMinute + minuteOffset + minutesInWeek) % minutesInWeek
   return {
-    weekday: (Math.floor(reminderMinute / (24 * 60)) + 1) as Weekday,
-    hour: Math.floor((reminderMinute % (24 * 60)) / 60),
-    minute: reminderMinute % 60,
+    weekday: (Math.floor(scheduledMinute / (24 * 60)) + 1) as Weekday,
+    hour: Math.floor((scheduledMinute % (24 * 60)) / 60),
+    minute: scheduledMinute % 60,
   }
 }
 
@@ -123,11 +128,15 @@ function alarmNotification(
   id: number,
   audio: Awaited<ReturnType<typeof notificationAudio>>,
   schedule: NonNullable<LocalNotificationSchema['schedule']>,
+  ringIndex: number,
+  ringCount: number,
 ): LocalNotificationSchema {
   return {
     id,
-    title: alarm.label || 'المنبه بيرن',
-    body: 'قوم يا بطل، معادك جه',
+    title: toArabicDigits(alarm.label) || 'المنبه بيرن',
+    body: ringCount > 1
+      ? `الرنة ${formatArabicNumber(ringIndex + 1)} من ${formatArabicNumber(ringCount)} — قوم يا بطل`
+      : 'قوم يا بطل، معادك جه',
     ...audio,
     actionTypeId: ACTION_TYPE_ID,
     schedule,
@@ -146,8 +155,8 @@ function reminderNotification(
 ): LocalNotificationSchema {
   return {
     id,
-    title: `فاضل ${minutesBefore} دقيقة على المنبه`,
-    body: alarm.label || 'جهّز نفسك، المنبه قرب',
+    title: `فاضل ${formatArabicNumber(minutesBefore)} دقيقة على المنبه`,
+    body: toArabicDigits(alarm.label) || 'جهّز نفسك، المنبه قرب',
     actionTypeId: ACTION_TYPE_ID,
     schedule,
     isExactNotification: true,
@@ -168,16 +177,26 @@ export async function syncAlarmNotifications(alarms: Alarm[], settings: AlarmSet
 
   for (const alarm of alarms.filter((item) => item.enabled)) {
     const audio = await notificationAudio(alarm)
+    const ringCount = Math.min(10, Math.max(1, alarm.ringCount ?? settings.defaultRingCount))
+    const ringIntervalMinutes = alarm.soundId === 'custom'
+      ? 1
+      : getSound(alarm.soundId).repeatIntervalMinutes
     if (!alarm.repeats) {
       const alarmAt = nextAlarmDate(alarm)
-      const id = notificationId(alarm.id)
-      ids.push(id)
-      notifications.push(alarmNotification(
-        alarm,
-        id,
-        audio,
-        { at: alarmAt, allowWhileIdle: true },
-      ))
+      for (let ringIndex = 0; ringIndex < ringCount; ringIndex += 1) {
+        const scheduledAt = addMinutes(alarmAt, ringIndex * ringIntervalMinutes)
+        if (scheduledAt.getTime() < Date.now() - 1000) continue
+        const id = notificationId(alarm.id, 0, false, ringIndex)
+        ids.push(id)
+        notifications.push(alarmNotification(
+          alarm,
+          id,
+          audio,
+          { at: scheduledAt, allowWhileIdle: true },
+          ringIndex,
+          ringCount,
+        ))
+      }
 
       const reminderAt = subtractMinutes(alarmAt, settings.reminderMinutes)
       if (settings.reminderEnabled && reminderAt > new Date()) {
@@ -196,31 +215,36 @@ export async function syncAlarmNotifications(alarms: Alarm[], settings: AlarmSet
     for (const [index, day] of alarm.days.entries()) {
       const skippedToday = alarm.skippedDate === todayKey() && day === new Date().getDay()
       const alarmAt = skippedToday ? nextWeekOccurrence(alarm.hour, alarm.minute) : null
-      const id = notificationId(alarm.id, index)
-      ids.push(id)
-      notifications.push(alarmNotification(
-        alarm,
-        id,
-        audio,
-        alarmAt
-          ? { at: alarmAt, allowWhileIdle: true }
-          : {
-              on: {
-                weekday: (day + 1) as Weekday,
-                hour: alarm.hour,
-                minute: alarm.minute,
+      for (let ringIndex = 0; ringIndex < ringCount; ringIndex += 1) {
+        const id = notificationId(alarm.id, index, false, ringIndex)
+        ids.push(id)
+        notifications.push(alarmNotification(
+          alarm,
+          id,
+          audio,
+          alarmAt
+            ? { at: addMinutes(alarmAt, ringIndex * ringIntervalMinutes), allowWhileIdle: true }
+            : {
+                on: weeklyTime(
+                  day,
+                  alarm.hour,
+                  alarm.minute,
+                  ringIndex * ringIntervalMinutes,
+                ),
+                allowWhileIdle: true,
               },
-              allowWhileIdle: true,
-            },
-      ))
+          ringIndex,
+          ringCount,
+        ))
+      }
 
       if (settings.reminderEnabled) {
         const reminderId = notificationId(alarm.id, index, true)
-        const reminderTime = weeklyReminderTime(
+        const reminderTime = weeklyTime(
           day,
           alarm.hour,
           alarm.minute,
-          settings.reminderMinutes,
+          -settings.reminderMinutes,
         )
         ids.push(reminderId)
         notifications.push(reminderNotification(

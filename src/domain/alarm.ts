@@ -1,3 +1,5 @@
+import { formatArabicNumber } from '../utils/numbers'
+
 export type AlarmSoundId =
   | 'adhan'
   | 'dawn'
@@ -16,6 +18,7 @@ export interface Alarm {
   repeats: boolean
   days: number[]
   soundId: AlarmSoundId
+  ringCount?: number
   oneTimeAt?: number
   customSoundName?: string
   customSoundDataUrl?: string
@@ -29,6 +32,7 @@ export interface AlarmDraft {
   repeats: boolean
   days: number[]
   soundId: AlarmSoundId
+  ringCount?: number
   customSoundName?: string
   customSoundDataUrl?: string
 }
@@ -55,7 +59,7 @@ export function todayKey(date = new Date()) {
 export function formatTime(hour: number, minute: number) {
   const normalizedHour = hour % 12 || 12
   return {
-    time: `${String(normalizedHour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
+    time: `${formatArabicNumber(normalizedHour, 2)}:${formatArabicNumber(minute, 2)}`,
     period: hour < 12 ? 'ص' : 'م',
   }
 }
@@ -105,7 +109,7 @@ export function nextAlarmText(alarms: Alarm[]) {
   const diffMinutes = Math.max(1, Math.round((active.date.getTime() - Date.now()) / 60000))
   const hours = Math.floor(diffMinutes / 60)
   const minutes = diffMinutes % 60
-  if (!hours) return `المنبه الجاي بعد ${minutes} دقيقة`
-  if (!minutes) return `المنبه الجاي بعد ${hours} ساعة`
-  return `المنبه الجاي بعد ${hours} ساعة و${minutes} دقيقة`
+  if (!hours) return `المنبه الجاي بعد ${formatArabicNumber(minutes)} دقيقة`
+  if (!minutes) return `المنبه الجاي بعد ${formatArabicNumber(hours)} ساعة`
+  return `المنبه الجاي بعد ${formatArabicNumber(hours)} ساعة و${formatArabicNumber(minutes)} دقيقة`
 }

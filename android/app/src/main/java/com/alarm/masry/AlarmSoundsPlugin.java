@@ -2,6 +2,7 @@ package com.alarm.masry;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.Notification;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioAttributes;
@@ -24,7 +25,7 @@ public class AlarmSoundsPlugin extends Plugin {
     @PluginMethod
     public void ensureBundledChannel(PluginCall call) {
         String soundName = call.getString("soundName");
-        String label = call.getString("label", "رنة المنبه");
+        String label = call.getString("label", "صوت المنبه");
         if (soundName == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             call.resolve(new JSObject().put("supported", false));
             return;
@@ -48,7 +49,7 @@ public class AlarmSoundsPlugin extends Plugin {
                 "android.resource://" + getContext().getPackageName() + "/raw/" + baseName
             );
             String channelId = "alarm_builtin_" + baseName;
-            createAlarmChannel(channelId, label, "رنة مدمجة لمنبهات alarm", soundUri);
+            createAlarmChannel(channelId, label, "صوت مدمج لمنبهات alarm", soundUri);
             call.resolve(new JSObject().put("channelId", channelId).put("supported", true));
         } catch (Exception error) {
             call.reject("Could not prepare bundled alarm sound", error);
@@ -102,7 +103,7 @@ public class AlarmSoundsPlugin extends Plugin {
             );
 
             String channelId = "alarm_" + baseName;
-            createAlarmChannel(channelId, "رنة من الجهاز", "رنة من اختيارك لمنبهات alarm", soundUri);
+            createAlarmChannel(channelId, "صوت من الجهاز", "صوت من اختيارك لمنبهات alarm", soundUri);
 
             call.resolve(new JSObject().put("channelId", channelId).put("supported", true));
         } catch (Exception error) {
@@ -121,6 +122,8 @@ public class AlarmSoundsPlugin extends Plugin {
         );
         channel.setDescription(description);
         channel.enableVibration(true);
+        channel.setVibrationPattern(new long[] { 0, 500, 250, 500 });
+        channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
         AudioAttributes attributes = new AudioAttributes.Builder()
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .setUsage(AudioAttributes.USAGE_ALARM)

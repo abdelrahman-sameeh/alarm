@@ -1,9 +1,10 @@
-import { BellDot, BellRing, ChevronLeft, Clock3, Info, ShieldCheck, Smartphone } from 'lucide-react'
+import { BellDot, BellRing, ChevronLeft, Clock3, Info, Repeat2, ShieldCheck, Smartphone } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { Toggle } from '../components/Toggle'
 import { exactAlarmStatus, openExactAlarmSettings, prepareNotifications } from '../services/alarmScheduler'
 import { useAlarms } from '../store/useAlarms'
+import { formatArabicNumber, fromArabicDigits } from '../utils/numbers'
 
 export function SettingsPage() {
   const { settings, updateSettings } = useAlarms()
@@ -27,7 +28,7 @@ export function SettingsPage() {
       <header className="top-bar"><div><p className="eyebrow">خلي كل حاجة مظبوطة</p><h1>الإعدادات</h1></div><span className="header-icon"><ShieldCheck size={24} /></span></header>
       <section className="settings-hero">
         <span><BellRing size={29} /></span>
-        <div><strong>جاهزية المنبه</strong><p>فعّل الإشعارات والمنبهات الدقيقة عشان الرنة تشتغل في معادها.</p></div>
+        <div><strong>جاهزية المنبه</strong><p>الصوت بيستخدم مستوى صوت المنبه المستقل، فيرن حتى لو رنات المكالمات والإشعارات صامتة.</p></div>
       </section>
       <section className="settings-list">
         <button type="button" onClick={() => void prepareNotifications().then(refreshPermission)}>
@@ -37,9 +38,34 @@ export function SettingsPage() {
           <span className="setting-icon"><Clock3 size={21} /></span><span><strong>المنبهات الدقيقة</strong><small>{permissionText}</small></span><ChevronLeft size={19} />
         </button>
       </section>
+      <section className="form-card ring-count-settings">
+        <div className="setting-row">
+          <div><strong><Repeat2 size={17} /> عدد مرات الرن الافتراضي</strong><span>أي منبه جديد أو من غير اختيار خاص</span></div>
+        </div>
+        <div className="count-options always-visible">
+          <div className="count-input-row">
+            <input
+              aria-label="عدد مرات الرن الافتراضي"
+              type="text"
+              inputMode="numeric"
+              value={formatArabicNumber(settings.defaultRingCount)}
+              onFocus={(event) => event.currentTarget.select()}
+              onChange={(event) => updateSettings({ defaultRingCount: Math.min(10, Math.max(1, Number(fromArabicDigits(event.target.value)) || 1)) })}
+            />
+            <span>مرة، والفاصل حسب مدة الصوت</span>
+          </div>
+          <div className="count-presets">
+            {[1, 2, 3, 5, 10].map((count) => (
+              <button type="button" className={settings.defaultRingCount === count ? 'selected' : ''} key={count} onClick={() => updateSettings({ defaultRingCount: count })}>
+                {formatArabicNumber(count)}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
       <section className="form-card reminder-settings">
         <div className="setting-row">
-          <div><strong><BellDot size={17} /> تذكير قبل المنبه</strong><span>Notification هادية قبل معاد الرنة</span></div>
+          <div><strong><BellDot size={17} /> تذكير قبل المنبه</strong><span>إشعار هادي قبل معاد الرنة</span></div>
           <Toggle
             checked={settings.reminderEnabled}
             onChange={(reminderEnabled) => updateSettings({ reminderEnabled })}
@@ -52,12 +78,11 @@ export function SettingsPage() {
             <div className="reminder-input-row">
               <input
                 id="reminder-minutes"
-                type="number"
+                type="text"
                 inputMode="numeric"
-                min="1"
-                max="180"
-                value={settings.reminderMinutes}
-                onChange={(event) => updateSettings({ reminderMinutes: Number(event.target.value) || 1 })}
+                value={formatArabicNumber(settings.reminderMinutes)}
+                onFocus={(event) => event.currentTarget.select()}
+                onChange={(event) => updateSettings({ reminderMinutes: Number(fromArabicDigits(event.target.value)) || 1 })}
               />
               <span>دقيقة</span>
             </div>
@@ -69,7 +94,7 @@ export function SettingsPage() {
                   key={minutes}
                   onClick={() => updateSettings({ reminderMinutes: minutes })}
                 >
-                  {minutes}
+                  {formatArabicNumber(minutes)}
                 </button>
               ))}
             </div>
@@ -77,8 +102,8 @@ export function SettingsPage() {
           </div>
         )}
       </section>
-      <section className="info-note"><Info size={18} /><p>على بعض موبايلات Android لازم تستثني التطبيق من توفير البطارية عشان المنبهات المهمة ما تتأخرش.</p></section>
-      <footer className="version-footer">alarm · إصدار 0.2.0</footer>
+      <section className="info-note"><Info size={18} /><p>اتأكد إن مستوى «صوت المنبه» نفسه مش صفر. وعلى بعض موبايلات Android لازم تستثني التطبيق من توفير البطارية عشان المنبهات المهمة ما تتأخرش.</p></section>
+      <footer className="version-footer">alarm · إصدار ٠.٣.٠</footer>
     </div>
   )
 }

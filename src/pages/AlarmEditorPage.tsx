@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Pause, Play, Trash2, Upload } from 'lucide-react'
+import { ArrowRight, BellRing, Check, Pause, Play, Trash2, Upload } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { TimeStepper } from '../components/TimeStepper'
@@ -8,11 +8,12 @@ import type { AlarmDraft, AlarmSoundId } from '../domain/alarm'
 import { DEFAULT_DAYS, WEEK_DAYS } from '../domain/alarm'
 import { playCustomPreview, playPreview, stopPreview } from '../services/audioPreview'
 import { useAlarms } from '../store/useAlarms'
+import { formatArabicNumber, fromArabicDigits, toArabicDigits } from '../utils/numbers'
 
 export function AlarmEditorPage() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const { getAlarm, addAlarm, updateAlarm, deleteAlarms } = useAlarms()
+  const { getAlarm, addAlarm, updateAlarm, deleteAlarms, settings } = useAlarms()
   const alarm = id && id !== 'new' ? getAlarm(Number(id)) : undefined
   const [playing, setPlaying] = useState<AlarmSoundId | null>(null)
   const [draft, setDraft] = useState<AlarmDraft>(() => {
@@ -24,6 +25,7 @@ export function AlarmEditorPage() {
       repeats: alarm?.repeats ?? false,
       days: alarm?.days ?? [...DEFAULT_DAYS],
       soundId: alarm?.soundId ?? 'dawn',
+      ringCount: alarm?.ringCount,
       customSoundName: alarm?.customSoundName,
       customSoundDataUrl: alarm?.customSoundDataUrl,
     }
@@ -66,7 +68,7 @@ export function AlarmEditorPage() {
   const importSound = (file?: File) => {
     if (!file) return
     if (file.size > 2_000_000) {
-      window.alert('اختار ملف أقل من 2 ميجا عشان يفضل محفوظ جوه التطبيق.')
+      window.alert('اختار ملف أقل من ٢ ميجا عشان يفضل محفوظ جوه التطبيق.')
       return
     }
     const reader = new FileReader()
@@ -106,7 +108,7 @@ export function AlarmEditorPage() {
 
       <section className="form-card">
         <label className="field-label" htmlFor="alarm-label">اسم المنبه</label>
-        <input id="alarm-label" className="text-field" value={draft.label} onChange={(event) => setField('label', event.target.value)} placeholder="مثلاً: صلاة الفجر" />
+        <input id="alarm-label" className="text-field" value={toArabicDigits(draft.label)} onChange={(event) => setField('label', toArabicDigits(event.target.value))} placeholder="مثلاً: صلاة الفجر" />
       </section>
 
       <section className="form-card repeat-card">
@@ -123,8 +125,47 @@ export function AlarmEditorPage() {
         )}
       </section>
 
+      <section className="form-card ring-count-card">
+        <div className="setting-row">
+          <div>
+            <strong><BellRing size={17} /> عدد خاص للمنبه</strong>
+            <span>{draft.ringCount === undefined
+              ? `هيستخدم الافتراضي: ${formatArabicNumber(settings.defaultRingCount)} مرات`
+              : 'اختار المنبه ده يرن كام مرة'}</span>
+          </div>
+          <Toggle
+            checked={draft.ringCount !== undefined}
+            onChange={(enabled) => setField('ringCount', enabled ? settings.defaultRingCount : undefined)}
+            label="عدد رنات خاص"
+          />
+        </div>
+        {draft.ringCount !== undefined && (
+          <div className="count-options">
+            <label htmlFor="alarm-ring-count">عدد مرات الرن</label>
+            <div className="count-input-row">
+              <input
+                id="alarm-ring-count"
+                type="text"
+                inputMode="numeric"
+                value={formatArabicNumber(draft.ringCount)}
+                onFocus={(event) => event.currentTarget.select()}
+                onChange={(event) => setField('ringCount', Math.min(10, Math.max(1, Number(fromArabicDigits(event.target.value)) || 1)))}
+              />
+              <span>مرة، والفاصل حسب مدة الصوت</span>
+            </div>
+            <div className="count-presets">
+              {[1, 2, 3, 5, 10].map((count) => (
+                <button type="button" className={draft.ringCount === count ? 'selected' : ''} key={count} onClick={() => setField('ringCount', count)}>
+                  {formatArabicNumber(count)}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+
       <section className="form-card">
-        <div className="form-title"><div><strong>صوت المنبه</strong><span>دوس تشغيل عشان تسمع الرنة</span></div></div>
+        <div className="form-title"><div><strong>صوت المنبه</strong><span>دوس تشغيل عشان تسمع الصوت</span></div></div>
         <div className="compact-sounds">
           {ALARM_SOUNDS.map((sound) => (
             <div key={sound.id} className={`sound-choice ${draft.soundId === sound.id ? 'selected' : ''}`}>
@@ -140,7 +181,7 @@ export function AlarmEditorPage() {
           {draft.customSoundName && (
             <div className={`sound-choice ${draft.soundId === 'custom' ? 'selected' : ''}`}>
               <button type="button" className="sound-main" onClick={() => setField('soundId', 'custom')}>
-                <span className="sound-color custom" /><span><strong>{draft.customSoundName}</strong><small>من جهازك</small></span>
+                <span className="sound-color custom" /><span><strong>{toArabicDigits(draft.customSoundName)}</strong><small>من جهازك</small></span>
               </button>
               <button type="button" className={`preview-button ${playing === 'custom' ? 'playing' : ''}`} onClick={toggleCustomPreview}>
                 {playing === 'custom' ? <Pause size={18} /> : <Play size={18} />}
@@ -148,7 +189,7 @@ export function AlarmEditorPage() {
             </div>
           )}
         </div>
-        <label className="upload-sound"><Upload size={18} /> إضافة رنة من الجهاز<input type="file" accept="audio/*" onChange={(event) => importSound(event.target.files?.[0])} /></label>
+        <label className="upload-sound"><Upload size={18} /> إضافة صوت من الجهاز<input type="file" accept="audio/*" onChange={(event) => importSound(event.target.files?.[0])} /></label>
       </section>
 
       {alarm && (

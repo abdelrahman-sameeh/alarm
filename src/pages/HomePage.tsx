@@ -4,10 +4,11 @@ import { useNavigate } from 'react-router-dom'
 import { AlarmCard } from '../components/AlarmCard'
 import { nextAlarmText } from '../domain/alarm'
 import { useAlarms } from '../store/useAlarms'
+import { formatArabicNumber } from '../utils/numbers'
 
 export function HomePage() {
   const navigate = useNavigate()
-  const { alarms, toggleAlarm, skipToday, pauseAlarms, deleteAlarms } = useAlarms()
+  const { alarms, settings, toggleAlarm, skipToday, pauseAlarms, deleteAlarms } = useAlarms()
   const [selecting, setSelecting] = useState(false)
   const [selected, setSelected] = useState<number[]>([])
   const summary = useMemo(() => nextAlarmText(alarms), [alarms])
@@ -27,12 +28,13 @@ export function HomePage() {
         <span className="next-icon"><AlarmClock size={24} /></span>
         <div><small>جاهزين للصحيان</small><strong>{summary}</strong></div><span className="status-pulse" />
       </section>
-      <div className="section-heading"><span>{alarms.length} منبهات</span>{selecting && <strong>{selected.length} متحدد</strong>}</div>
+      <div className="section-heading"><span>{formatArabicNumber(alarms.length)} منبهات</span>{selecting && <strong>{formatArabicNumber(selected.length)} متحدد</strong>}</div>
       <section className="alarm-list">
         {alarms.map((alarm) => (
           <AlarmCard
             key={alarm.id}
             alarm={alarm}
+            ringCount={alarm.ringCount ?? settings.defaultRingCount}
             selecting={selecting}
             selected={selected.includes(alarm.id)}
             onSelect={() => setSelected((current) => current.includes(alarm.id)

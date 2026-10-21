@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { getSound } from '../data/sounds'
 import type { Alarm } from '../domain/alarm'
 import { formatRepeat, formatTime, todayKey } from '../domain/alarm'
+import { formatArabicNumber, toArabicDigits } from '../utils/numbers'
 import { Toggle } from './Toggle'
 
 interface AlarmCardProps {
@@ -13,9 +14,10 @@ interface AlarmCardProps {
   onSelect: () => void
   onStartSelection: () => void
   onToggle: () => void
+  ringCount: number
 }
 
-export function AlarmCard({ alarm, selecting, selected, onSelect, onStartSelection, onToggle }: AlarmCardProps) {
+export function AlarmCard({ alarm, selecting, selected, onSelect, onStartSelection, onToggle, ringCount }: AlarmCardProps) {
   const navigate = useNavigate()
   const holdTimer = useRef<number | null>(null)
   const didLongPress = useRef(false)
@@ -70,8 +72,9 @@ export function AlarmCard({ alarm, selecting, selected, onSelect, onStartSelecti
         {!selecting && <ChevronLeft className="card-chevron" size={20} />}
       </div>
       <div className="alarm-card-meta">
-        <strong>{alarm.label}</strong><span>{formatRepeat(alarm)}</span>
+        <strong>{toArabicDigits(alarm.label)}</strong><span>{formatRepeat(alarm)}</span>
         <span className="sound-dot" style={{ background: sound.accent }} /><span>{sound.name}</span>
+        <span>مرات الرن: {formatArabicNumber(ringCount)}</span>
       </div>
       {skipped && <div className="skip-badge"><RotateCcw size={14} /> متخطي النهارده بس</div>}
     </article>

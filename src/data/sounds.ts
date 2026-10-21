@@ -6,15 +6,16 @@ export interface AlarmSound {
   description: string
   file: string
   accent: string
+  repeatIntervalMinutes: number
 }
 
 export const ALARM_SOUNDS: AlarmSound[] = [
-  { id: 'adhan', name: 'الأذان الأخير', description: 'رنة الأذان', file: '/alarm_adhan_v2.wav', accent: '#ededed' },
-  { id: 'dawn', name: 'نسمة الفجر', description: 'بداية هادية بتعلى تدريجي', file: '/alarm_dawn_v2.wav', accent: '#d8d8d8' },
-  { id: 'classic', name: 'الجرس الكلاسيك', description: 'جرس واضح للصحيان التقيل', file: '/alarm_classic_v2.wav', accent: '#c6c6c6' },
-  { id: 'digital', name: 'ديجيتال', description: 'نبض سريع ومباشر', file: '/alarm_digital_v2.wav', accent: '#b5b5b5' },
-  { id: 'gentle', name: 'صحيان براحة', description: 'نغمة ناعمة للصحيان الهادي', file: '/alarm_gentle_v2.wav', accent: '#a4a4a4' },
-  { id: 'pulse', name: 'نبض قوي', description: 'تنبيه قوي ومتكرر', file: '/alarm_pulse_v2.wav', accent: '#939393' },
+  { id: 'adhan', name: 'النداء الأخير', description: 'أذان محمد جازي عبدالله كامل', file: '/alarm_adhan_jazi_v3.mp3', accent: '#ededed', repeatIntervalMinutes: 5 },
+  { id: 'dawn', name: 'نسمة الفجر', description: 'لحن هادي بيصحّيك تدريجي', file: '/alarm_dawn_v3.mp3', accent: '#d8d8d8', repeatIntervalMinutes: 1 },
+  { id: 'classic', name: 'جرس كلاسيك', description: 'جرس واضح للصحيان التقيل', file: '/alarm_classic_v3.mp3', accent: '#c6c6c6', repeatIntervalMinutes: 1 },
+  { id: 'digital', name: 'ديجيتال', description: 'تنبيه إلكتروني واضح', file: '/alarm_digital_v3.mp3', accent: '#b5b5b5', repeatIntervalMinutes: 1 },
+  { id: 'gentle', name: 'صحيان براحة', description: 'لحن ناعم للصحيان الهادي', file: '/alarm_gentle_v3.mp3', accent: '#a4a4a4', repeatIntervalMinutes: 1 },
+  { id: 'pulse', name: 'نبض قوي', description: 'تنبيه قوي للصحيان التقيل', file: '/alarm_pulse_v3.mp3', accent: '#939393', repeatIntervalMinutes: 1 },
 ]
 
 export function getSound(soundId: AlarmSoundId) {

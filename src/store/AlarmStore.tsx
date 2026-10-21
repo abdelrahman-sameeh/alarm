@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { PropsWithChildren } from 'react'
 import type { Alarm, AlarmDraft } from '../domain/alarm'
 import { DEFAULT_DAYS, nextOneTimeTimestamp, todayKey } from '../domain/alarm'
+import { getSound } from '../data/sounds'
 import { DEFAULT_ALARM_SETTINGS, type AlarmSettings } from '../domain/settings'
 import { listenForNotificationActions, syncAlarmNotifications } from '../services/alarmScheduler'
 import { AlarmStoreContext, type AlarmStoreValue } from './AlarmContext'
@@ -21,12 +22,12 @@ const initialAlarms: Alarm[] = DEFAULT_TIMES.map(([hour, minute], index) => ({
   soundId: index === 0 ? 'adhan' : 'dawn',
 }))
 
-function loadAlarms() {
+function loadAlarms(defaultRingCount: number) {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (!stored) return initialAlarms
     const parsed = JSON.parse(stored) as Alarm[]
-    return normalizeAlarms(parsed)
+    return normalizeAlarms(parsed, defaultRingCount)
   } catch {
     return initialAlarms
   }
@@ -35,35 +36,46 @@ function loadAlarms() {
 function loadSettings(): AlarmSettings {
   try {
     const stored = localStorage.getItem(SETTINGS_KEY)
-    return stored
+    const parsed = stored
       ? { ...DEFAULT_ALARM_SETTINGS, ...JSON.parse(stored) as Partial<AlarmSettings> }
       : DEFAULT_ALARM_SETTINGS
+    return {
+      ...parsed,
+      reminderMinutes: Math.min(180, Math.max(1, Number(parsed.reminderMinutes) || 10)),
+      defaultRingCount: Math.min(10, Math.max(1, Number(parsed.defaultRingCount) || 3)),
+    }
   } catch {
     return DEFAULT_ALARM_SETTINGS
   }
 }
 
-function normalizeAlarms(alarms: Alarm[]) {
+function normalizeAlarms(alarms: Alarm[], defaultRingCount: number) {
   const today = todayKey()
   const now = Date.now()
   return alarms.map((alarm) => {
+    const ringCount = alarm.ringCount === undefined
+      ? undefined
+      : Math.min(10, Math.max(1, Number(alarm.ringCount) || 1))
     const skippedDate = alarm.skippedDate && alarm.skippedDate !== today
       ? undefined
       : alarm.skippedDate
-    if (alarm.repeats) return { ...alarm, skippedDate, oneTimeAt: undefined }
+    if (alarm.repeats) return { ...alarm, ringCount, skippedDate, oneTimeAt: undefined }
     const oneTimeAt = alarm.oneTimeAt ?? nextOneTimeTimestamp(alarm.hour, alarm.minute)
+    const intervalMinutes = alarm.soundId === 'custom' ? 1 : getSound(alarm.soundId).repeatIntervalMinutes
+    const lastRingAt = oneTimeAt + ((ringCount ?? defaultRingCount) - 1) * intervalMinutes * 60_000
     return {
       ...alarm,
+      ringCount,
       skippedDate: undefined,
       oneTimeAt,
-      enabled: alarm.enabled && oneTimeAt > now,
+      enabled: alarm.enabled && lastRingAt + 30_000 > now,
     }
   })
 }
 
 export function AlarmStoreProvider({ children }: PropsWithChildren) {
-  const [alarms, setAlarms] = useState<Alarm[]>(loadAlarms)
   const [settings, setSettings] = useState<AlarmSettings>(loadSettings)
+  const [alarms, setAlarms] = useState<Alarm[]>(() => loadAlarms(settings.defaultRingCount))
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms))
@@ -75,7 +87,7 @@ export function AlarmStoreProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     const refreshTimeSensitiveState = () => {
       setAlarms((current) => {
-        const normalized = normalizeAlarms(current)
+        const normalized = normalizeAlarms(current, settings.defaultRingCount)
         return JSON.stringify(normalized) === JSON.stringify(current) ? current : normalized
       })
     }
@@ -85,7 +97,7 @@ export function AlarmStoreProvider({ children }: PropsWithChildren) {
       window.clearInterval(timer)
       document.removeEventListener('visibilitychange', refreshTimeSensitiveState)
     }
-  }, [])
+  }, [settings.defaultRingCount])
 
   const addAlarm = useCallback((draft: AlarmDraft) => {
     const id = Math.floor(Date.now() / 1000) % 100_000_000
@@ -151,6 +163,7 @@ export function AlarmStoreProvider({ children }: PropsWithChildren) {
       ...current,
       ...patch,
       reminderMinutes: Math.min(180, Math.max(1, patch.reminderMinutes ?? current.reminderMinutes)),
+      defaultRingCount: Math.min(10, Math.max(1, patch.defaultRingCount ?? current.defaultRingCount)),
     }))
   }, [])
 

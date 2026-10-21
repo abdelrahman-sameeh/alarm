@@ -154,7 +154,17 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .setting-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px; color: var(--accent); background: rgba(255,255,255,.07); }
 .settings-list svg:last-child { color: #4f5753; }
 .reminder-settings { margin-top: 13px; }
-.reminder-settings .setting-row strong { display: flex; align-items: center; gap: 7px; }
+.reminder-settings .setting-row strong, .ring-count-card .setting-row strong, .ring-count-settings .setting-row strong { display: flex; align-items: center; gap: 7px; }
+.ring-count-settings { margin-top: 13px; }
+.count-options { display: grid; gap: 11px; margin-top: 17px; padding-top: 15px; border-top: 1px solid var(--line); }
+.count-options > label { color: var(--muted); font-size: 10px; }
+.count-options.always-visible { margin-top: 14px; }
+.count-input-row { display: flex; align-items: center; gap: 9px; }
+.count-input-row input { width: 88px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; color: white; background: #0c0f0e; text-align: center; font-size: 18px; font-weight: 700; }
+.count-input-row span { color: var(--muted); font-size: 11px; }
+.count-presets { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.count-presets button { padding: 9px 3px; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); background: #0c0f0e; font-size: 10px; cursor: pointer; }
+.count-presets button.selected { border-color: var(--accent); color: #111; background: var(--accent); font-weight: 800; }
 .reminder-options { display: grid; gap: 11px; margin-top: 17px; padding-top: 15px; border-top: 1px solid var(--line); }
 .reminder-options > label { color: var(--muted); font-size: 10px; }
 .reminder-input-row { display: flex; align-items: center; gap: 9px; }

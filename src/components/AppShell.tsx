@@ -1,15 +1,20 @@
 import { Home, Settings, Volume2 } from 'lucide-react'
+import { useLayoutEffect } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 const tabs = [
   { to: '/', label: 'المنبهات', icon: Home },
-  { to: '/sounds', label: 'الرنات', icon: Volume2 },
+  { to: '/sounds', label: 'الأصوات', icon: Volume2 },
   { to: '/settings', label: 'الإعدادات', icon: Settings },
 ]
 
 export function AppShell() {
   const location = useLocation()
   const hideNavigation = location.pathname.startsWith('/alarm/')
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0)
+    document.querySelector('.app-content')?.scrollTo(0, 0)
+  }, [location.pathname])
   return (
     <div className="app-frame" dir="rtl">
       <div className="ambient ambient-one" />
