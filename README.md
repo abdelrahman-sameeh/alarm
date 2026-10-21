@@ -1,83 +1,85 @@
-# Alarm
+# Alarm Masry
 
-تطبيق منبّه عربي مصري لإدارة مجموعة من المنبّهات مرة واحدة، مبني باستخدام React Native وExpo وTypeScript.
+تطبيق منبه Android بواجهة عربية مصرية وDark Mode، مبني بـReact + Vite ومغلف كتطبيق Native باستخدام Capacitor.
 
-## الفكرة
+## المميزات الحالية
 
-لو صحيت قبل باقي المنبّهات، اضغط **صحيت خلاص؟** وحدد كل اللي فاضل، ثم اختار:
+- منبه مرة واحدة أو متكرر على أيام محددة.
+- تعديل الساعة والدقيقة بزيادة أو نقصان دقيقة واحدة.
+- تحديد أكتر من منبه ثم: تخطي النهارده، إيقاف دائم، أو حذف.
+- 6 رنات مدمجة مع تشغيل وإيقاف المعاينة.
+- إضافة ملف صوت من الجهاز واستخدامه كرنة للمنبه على Android.
+- حفظ المنبهات محليًا وإعادة جدولتها بعد إعادة تشغيل الموبايل.
+- زر Back داخل صفحات التعديل يرجع للتطبيق، ومن الرئيسية يصغر التطبيق.
+- دعم اتجاه RTL وتصميم Mobile-first.
 
-- **النهارده بس:** تخطّي رنات اليوم مع الاحتفاظ بالتكرار.
-- **إيقاف دايم:** إيقاف المنبّهات لحد ما تشغلها بنفسك.
-- **حذف:** إزالة المنبّهات نهائيًا.
+## متطلبات البناء
 
-التفاصيل الكاملة وحدود النسخة الحالية موجودة في [تصور المنتج](docs/PRODUCT.md).
+- Node.js 22 أو أحدث.
+- Java 21 أو أحدث.
+- Android SDK Platform 36.
+- Android SDK Build Tools 35.
 
-## التشغيل
+على الجهاز الحالي الأدوات متجهزة بالفعل، وسكربت البناء بيختار Java 21 تلقائيًا لو الـJava الافتراضي أقدم.
+
+## التشغيل أثناء التطوير
 
 ```bash
 npm install
-npm start
+npm run dev
 ```
 
-أوامر التشغيل المباشر:
+## إخراج APK قابل للتثبيت
 
 ```bash
-npm run android
-npm run ios
-npm run web
+npm run android:apk
 ```
 
-تشغيل iOS محليًا يحتاج macOS وXcode.
+الملف الناتج:
 
-## إنشاء APK للتثبيت المباشر
-
-سجّل الدخول إلى Expo مرة واحدة، ثم ابدأ بناء النسخة:
-
-```bash
-npx eas-cli@latest login
-npm run build:apk
+```text
+android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-ملف `eas.json` يحتوي على profile باسم `preview` مضبوط على `android.buildType: apk`. بعد اكتمال البناء سيظهر رابط يمكن فتحه من الموبايل لتنزيل وتثبيت التطبيق. أما profile باسم `production` فيُنتج ملف AAB المناسب لمتجر Google Play.
-
-## فحوصات الجودة
+تثبيته على موبايل موصل وUSB Debugging شغال:
 
 ```bash
-npm run check
-npx expo-doctor
+adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+بعد التثبيت افتح صفحة الإعدادات داخل التطبيق وفعّل إذن الإشعارات والمنبهات الدقيقة.
+
+## أوامر مهمة بعد أي تعديل
+
+```bash
+npm run check          # فحص الكود وProduction build
+npm run android:sync   # نقل آخر نسخة Web لمشروع Android
+npm run android:apk    # Sync + إخراج APK
+npm run android:open   # فتح مشروع Android Studio
 ```
 
 ## هيكل المشروع
 
 ```text
 src/
-├── app/                       # مسارات Expo Router فقط
-├── features/
-│   └── alarms/
-│       ├── components/        # واجهة ميزة المنبّهات
-│       ├── data/              # التخزين ومصادر البيانات
-│       ├── domain/            # الأنواع وقواعد العمل النقية
-│       └── store/             # الحالة وربط الواجهة بالبيانات
-└── theme/                     # ألوان ومسافات التصميم
+  components/    مكونات الواجهة المشتركة
+  data/          تعريف الرنات المدمجة
+  domain/        أنواع وقواعد المنبه
+  pages/         شاشات التطبيق
+  services/      الصوت وجدولة Android
+  store/         حالة المنبهات والتخزين المحلي
+android/         مشروع Capacitor Android والكود الـNative
+public/          ملفات الرنات المدمجة
+scripts/         سكربتات البناء وتوليد الرنات
 ```
 
-الهيكل متعمد يكون صغيرًا: الفصل موجود عند حدود المسؤوليات فقط، بدون abstraction أو folders زيادة.
+## GitHub Releases
 
-## الإصدارات على GitHub
+أي Tag بالشكل `v*` يشغل Workflow ويبني APK ويرفقه في GitHub Release:
 
-المشروع يستخدم Release Please. بعد رفعه على GitHub:
-
-1. اجعل `main` أو `master` هو الفرع الأساسي.
-2. فعّل GitHub Actions بصلاحية قراءة وكتابة للـ workflows.
-3. استخدم Conventional Commits مثل:
-
-```text
-feat: add alarm grouping
-fix: keep skipped alarms disabled for today
+```bash
+git tag v0.1.0
+git push origin v0.1.0
 ```
 
-سيُنشئ workflow طلب Release PR تلقائيًا، وعند دمجه ينشئ GitHub Release ويحدث رقم النسخة وسجل التغييرات. فحص lint وTypeScript وExpo وبناء Android bundle يعمل تلقائيًا مع كل Pull Request.
-
-## ملاحظة عن المنبّه الحقيقي
-
-إدارة المنبّهات والواجهة والتخزين واستيراد ومعاينة ملفات الصوت موجودة. الاعتماد على رنين دقيق والتطبيق مغلق، وتشغيل ملف اختاره المستخدم كصوت منبّه، يحتاج محرك native مخصص قبل اعتبار التطبيق جاهزًا للنشر في المتاجر.
+نسخة GitHub الحالية Debug ومناسبة للتجربة والتثبيت المباشر. قبل النشر على Google Play يلزم Keystore خاص بالمشروع وRelease signing.

@@ -1,48 +1,36 @@
 {
   "name": "alarm",
+  "private": true,
   "version": "0.1.0",
-  "main": "expo-router/entry",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "check": "npm run lint && npm run build",
+    "preview": "vite preview",
+    "android:sync": "npm run build && cap sync android",
+    "android:open": "cap open android",
+    "android:apk": "bash scripts/build-android.sh"
+  },
   "dependencies": {
-    "@expo/vector-icons": "^15.0.2",
-    "@react-native-async-storage/async-storage": "2.2.0",
-    "expo": "~58.0.16",
-    "expo-asset": "~58.0.17",
-    "expo-audio": "~58.0.9",
-    "expo-constants": "~58.0.12",
-    "expo-document-picker": "~58.0.4",
-    "expo-file-system": "~58.0.10",
-    "expo-font": "~58.0.9",
-    "expo-haptics": "~58.0.7",
-    "expo-linear-gradient": "~58.0.3",
-    "expo-linking": "~58.0.13",
-    "expo-notifications": "~58.1.5",
-    "expo-router": "~58.0.24",
-    "expo-status-bar": "~58.0.3",
-    "expo-system-ui": "~58.0.6",
-    "react": "19.3.0",
-    "react-dom": "19.3.0",
-    "react-native": "0.88.0",
-    "react-native-safe-area-context": "~5.10.1",
-    "react-native-screens": "~4.30.0",
-    "react-native-web": "^0.21.4"
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/local-notifications": "^8.3.1",
+    "lucide-react": "^1.60.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.4"
   },
   "devDependencies": {
-    "@types/react": "~19.3.0",
-    "eslint": "^9.39.5",
-    "eslint-config-expo": "~58.0.4",
-    "typescript": "~6.0.3"
-  },
-  "scripts": {
-    "start": "expo start",
-    "start:clear": "expo start --clear",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web",
-    "build:apk:local": "npx expo prebuild --platform android --no-install && cd android && ./gradlew :app:assembleRelease",
-    "build:apk": "npx eas-cli@latest build --platform android --profile preview",
-    "lint": "expo lint",
-    "typecheck": "tsc --noEmit",
-    "check": "npm run lint && npm run typecheck"
-  },
-  "private": true
+    "@capacitor/cli": "^8.5.3",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "oxlint": "^1.88.0",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.4"
+  }
 }
