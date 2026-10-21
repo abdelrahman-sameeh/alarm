@@ -9,12 +9,12 @@ export interface AlarmSound {
 }
 
 export const ALARM_SOUNDS: AlarmSound[] = [
-  { id: 'adhan', name: 'الأذان', description: 'تنبيه هادي مستوحى من مقام الأذان', file: '/adhan.wav', accent: '#d4ff6a' },
-  { id: 'dawn', name: 'نسمة الفجر', description: 'بداية هادية بتعلى تدريجي', file: '/dawn.wav', accent: '#8ee3ff' },
-  { id: 'classic', name: 'الجرس الكلاسيك', description: 'جرس واضح للصحيان التقيل', file: '/classic.wav', accent: '#ffcb66' },
-  { id: 'digital', name: 'ديجيتال', description: 'نبض سريع ومباشر', file: '/digital.wav', accent: '#bf9bff' },
-  { id: 'gentle', name: 'صحيان براحة', description: 'نغمة ناعمة للصحيان الهادي', file: '/gentle.wav', accent: '#8ff0c6' },
-  { id: 'pulse', name: 'نبض قوي', description: 'تنبيه قوي ومتكرر', file: '/pulse.wav', accent: '#ff7b88' },
+  { id: 'adhan', name: 'الأذان الأخير', description: 'رنة الأذان', file: '/alarm_adhan_v2.wav', accent: '#ededed' },
+  { id: 'dawn', name: 'نسمة الفجر', description: 'بداية هادية بتعلى تدريجي', file: '/alarm_dawn_v2.wav', accent: '#d8d8d8' },
+  { id: 'classic', name: 'الجرس الكلاسيك', description: 'جرس واضح للصحيان التقيل', file: '/alarm_classic_v2.wav', accent: '#c6c6c6' },
+  { id: 'digital', name: 'ديجيتال', description: 'نبض سريع ومباشر', file: '/alarm_digital_v2.wav', accent: '#b5b5b5' },
+  { id: 'gentle', name: 'صحيان براحة', description: 'نغمة ناعمة للصحيان الهادي', file: '/alarm_gentle_v2.wav', accent: '#a4a4a4' },
+  { id: 'pulse', name: 'نبض قوي', description: 'تنبيه قوي ومتكرر', file: '/alarm_pulse_v2.wav', accent: '#939393' },
 ]
 
 export function getSound(soundId: AlarmSoundId) {

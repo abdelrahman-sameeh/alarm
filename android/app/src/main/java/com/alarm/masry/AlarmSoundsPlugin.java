@@ -22,6 +22,40 @@ import java.security.MessageDigest;
 @CapacitorPlugin(name = "AlarmSounds")
 public class AlarmSoundsPlugin extends Plugin {
     @PluginMethod
+    public void ensureBundledChannel(PluginCall call) {
+        String soundName = call.getString("soundName");
+        String label = call.getString("label", "رنة المنبه");
+        if (soundName == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            call.resolve(new JSObject().put("supported", false));
+            return;
+        }
+
+        try {
+            String baseName = soundName;
+            if (baseName.contains("/")) baseName = baseName.substring(baseName.lastIndexOf('/') + 1);
+            if (baseName.contains(".")) baseName = baseName.substring(0, baseName.lastIndexOf('.'));
+            if (!baseName.matches("[a-z0-9_]+")) {
+                call.reject("Invalid bundled sound name");
+                return;
+            }
+            int resourceId = getContext().getResources().getIdentifier(baseName, "raw", getContext().getPackageName());
+            if (resourceId == 0) {
+                call.reject("Bundled sound was not found");
+                return;
+            }
+
+            Uri soundUri = Uri.parse(
+                "android.resource://" + getContext().getPackageName() + "/raw/" + baseName
+            );
+            String channelId = "alarm_builtin_" + baseName;
+            createAlarmChannel(channelId, label, "رنة مدمجة لمنبهات alarm", soundUri);
+            call.resolve(new JSObject().put("channelId", channelId).put("supported", true));
+        } catch (Exception error) {
+            call.reject("Could not prepare bundled alarm sound", error);
+        }
+    }
+
+    @PluginMethod
     public void ensureCustomChannel(PluginCall call) {
         String dataUrl = call.getString("dataUrl");
         if (dataUrl == null || !dataUrl.contains(",")) {
@@ -68,28 +102,31 @@ public class AlarmSoundsPlugin extends Plugin {
             );
 
             String channelId = "alarm_" + baseName;
-            NotificationManager manager = (NotificationManager) getContext()
-                .getSystemService(Context.NOTIFICATION_SERVICE);
-            if (manager.getNotificationChannel(channelId) == null) {
-                NotificationChannel channel = new NotificationChannel(
-                    channelId,
-                    "رنة من الجهاز",
-                    NotificationManager.IMPORTANCE_HIGH
-                );
-                channel.setDescription("رنة من اختيارك لمنبهات Alarm Masry");
-                channel.enableVibration(true);
-                AudioAttributes attributes = new AudioAttributes.Builder()
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .build();
-                channel.setSound(soundUri, attributes);
-                manager.createNotificationChannel(channel);
-            }
+            createAlarmChannel(channelId, "رنة من الجهاز", "رنة من اختيارك لمنبهات alarm", soundUri);
 
             call.resolve(new JSObject().put("channelId", channelId).put("supported", true));
         } catch (Exception error) {
             call.reject("Could not prepare custom alarm sound", error);
         }
+    }
+
+    private void createAlarmChannel(String id, String name, String description, Uri soundUri) {
+        NotificationManager manager = (NotificationManager) getContext()
+            .getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager.getNotificationChannel(id) != null) return;
+        NotificationChannel channel = new NotificationChannel(
+            id,
+            name,
+            NotificationManager.IMPORTANCE_HIGH
+        );
+        channel.setDescription(description);
+        channel.enableVibration(true);
+        AudioAttributes attributes = new AudioAttributes.Builder()
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .setUsage(AudioAttributes.USAGE_ALARM)
+            .build();
+        channel.setSound(soundUri, attributes);
+        manager.createNotificationChannel(channel);
     }
 
     private String extensionFor(String metadata) {

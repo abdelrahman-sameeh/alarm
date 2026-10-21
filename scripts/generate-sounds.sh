@@ -28,9 +28,9 @@ make_sound() {
     -t 8 -af "$wave" -ar 22050 -ac 1 -c:a pcm_s16le "$output_dir/$name.wav"
 }
 
-make_sound adhan   'volume=0.8' 392 440 523 440
-make_sound dawn    'volume=0.65' 330 392 494 587
-make_sound classic 'volume=0.9' 880 660 880 660
-make_sound digital 'volume=0.75' 784 988 784 988
-make_sound gentle  'volume=0.55' 262 330 392 523
-make_sound pulse   'volume=0.95' 988 988 740 988
+make_sound alarm_adhan_v2   'volume=0.8' 392 440 523 440
+make_sound alarm_dawn_v2    'volume=0.65' 330 392 494 587
+make_sound alarm_classic_v2 'volume=0.9' 880 660 880 660
+make_sound alarm_digital_v2 'volume=0.75' 784 988 784 988
+make_sound alarm_gentle_v2  'volume=0.55' 262 330 392 523
+make_sound alarm_pulse_v2   'volume=0.95' 988 988 740 988

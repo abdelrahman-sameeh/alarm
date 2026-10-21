@@ -1,9 +1,12 @@
-import { BellRing, ChevronLeft, Clock3, Info, ShieldCheck, Smartphone } from 'lucide-react'
+import { BellDot, BellRing, ChevronLeft, Clock3, Info, ShieldCheck, Smartphone } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
+import { Toggle } from '../components/Toggle'
 import { exactAlarmStatus, openExactAlarmSettings, prepareNotifications } from '../services/alarmScheduler'
+import { useAlarms } from '../store/useAlarms'
 
 export function SettingsPage() {
+  const { settings, updateSettings } = useAlarms()
   const [permissionText, setPermissionText] = useState(() =>
     Capacitor.isNativePlatform() ? 'جاري الفحص...' : 'هيتفعّل على نسخة Android',
   )
@@ -34,8 +37,48 @@ export function SettingsPage() {
           <span className="setting-icon"><Clock3 size={21} /></span><span><strong>المنبهات الدقيقة</strong><small>{permissionText}</small></span><ChevronLeft size={19} />
         </button>
       </section>
+      <section className="form-card reminder-settings">
+        <div className="setting-row">
+          <div><strong><BellDot size={17} /> تذكير قبل المنبه</strong><span>Notification هادية قبل معاد الرنة</span></div>
+          <Toggle
+            checked={settings.reminderEnabled}
+            onChange={(reminderEnabled) => updateSettings({ reminderEnabled })}
+            label="تذكير قبل المنبه"
+          />
+        </div>
+        {settings.reminderEnabled && (
+          <div className="reminder-options">
+            <label htmlFor="reminder-minutes">فكرني قبلها بكام دقيقة؟</label>
+            <div className="reminder-input-row">
+              <input
+                id="reminder-minutes"
+                type="number"
+                inputMode="numeric"
+                min="1"
+                max="180"
+                value={settings.reminderMinutes}
+                onChange={(event) => updateSettings({ reminderMinutes: Number(event.target.value) || 1 })}
+              />
+              <span>دقيقة</span>
+            </div>
+            <div className="reminder-presets">
+              {[5, 10, 15, 30, 60].map((minutes) => (
+                <button
+                  type="button"
+                  className={settings.reminderMinutes === minutes ? 'selected' : ''}
+                  key={minutes}
+                  onClick={() => updateSettings({ reminderMinutes: minutes })}
+                >
+                  {minutes}
+                </button>
+              ))}
+            </div>
+            <p>من نفس الإشعار تقدر تتخطى منبه النهارده أو توقفه دائمًا.</p>
+          </div>
+        )}
+      </section>
       <section className="info-note"><Info size={18} /><p>على بعض موبايلات Android لازم تستثني التطبيق من توفير البطارية عشان المنبهات المهمة ما تتأخرش.</p></section>
-      <footer className="version-footer">Alarm Masry · إصدار 0.1.0</footer>
+      <footer className="version-footer">alarm · إصدار 0.2.0</footer>
     </div>
   )
 }

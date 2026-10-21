@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { PropsWithChildren } from 'react'
 import type { Alarm, AlarmDraft } from '../domain/alarm'
 import { DEFAULT_DAYS, nextOneTimeTimestamp, todayKey } from '../domain/alarm'
-import { syncAlarmNotifications } from '../services/alarmScheduler'
+import { DEFAULT_ALARM_SETTINGS, type AlarmSettings } from '../domain/settings'
+import { listenForNotificationActions, syncAlarmNotifications } from '../services/alarmScheduler'
 import { AlarmStoreContext, type AlarmStoreValue } from './AlarmContext'
 
 const STORAGE_KEY = 'alarm-masry:alarms-v2'
+const SETTINGS_KEY = 'alarm-masry:settings-v1'
 const DEFAULT_TIMES = [[4, 0], [4, 30], [5, 0], [5, 30], [6, 0], [6, 30]]
 
 const initialAlarms: Alarm[] = DEFAULT_TIMES.map(([hour, minute], index) => ({
@@ -30,6 +32,17 @@ function loadAlarms() {
   }
 }
 
+function loadSettings(): AlarmSettings {
+  try {
+    const stored = localStorage.getItem(SETTINGS_KEY)
+    return stored
+      ? { ...DEFAULT_ALARM_SETTINGS, ...JSON.parse(stored) as Partial<AlarmSettings> }
+      : DEFAULT_ALARM_SETTINGS
+  } catch {
+    return DEFAULT_ALARM_SETTINGS
+  }
+}
+
 function normalizeAlarms(alarms: Alarm[]) {
   const today = todayKey()
   const now = Date.now()
@@ -50,12 +63,14 @@ function normalizeAlarms(alarms: Alarm[]) {
 
 export function AlarmStoreProvider({ children }: PropsWithChildren) {
   const [alarms, setAlarms] = useState<Alarm[]>(loadAlarms)
+  const [settings, setSettings] = useState<AlarmSettings>(loadSettings)
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms))
-    const timer = window.setTimeout(() => void syncAlarmNotifications(alarms), 350)
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+    const timer = window.setTimeout(() => void syncAlarmNotifications(alarms, settings), 350)
     return () => window.clearTimeout(timer)
-  }, [alarms])
+  }, [alarms, settings])
 
   useEffect(() => {
     const refreshTimeSensitiveState = () => {
@@ -131,8 +146,27 @@ export function AlarmStoreProvider({ children }: PropsWithChildren) {
     setAlarms((current) => current.filter((alarm) => !ids.includes(alarm.id)))
   }, [])
 
+  const updateSettings = useCallback((patch: Partial<AlarmSettings>) => {
+    setSettings((current) => ({
+      ...current,
+      ...patch,
+      reminderMinutes: Math.min(180, Math.max(1, patch.reminderMinutes ?? current.reminderMinutes)),
+    }))
+  }, [])
+
+  useEffect(() => {
+    let stopListening: (() => void) | undefined
+    void listenForNotificationActions((action, alarmId) => {
+      if (action === 'skip_today') skipToday([alarmId])
+      if (action === 'disable_alarm') pauseAlarms([alarmId])
+    }).then((stop) => { stopListening = stop })
+    return () => stopListening?.()
+  }, [pauseAlarms, skipToday])
+
   const value = useMemo<AlarmStoreValue>(() => ({
     alarms,
+    settings,
+    updateSettings,
     addAlarm,
     updateAlarm,
     toggleAlarm,
@@ -140,7 +174,7 @@ export function AlarmStoreProvider({ children }: PropsWithChildren) {
     skipToday,
     deleteAlarms,
     getAlarm: (id) => alarms.find((alarm) => alarm.id === id),
-  }), [alarms, addAlarm, updateAlarm, toggleAlarm, pauseAlarms, skipToday, deleteAlarms])
+  }), [alarms, settings, updateSettings, addAlarm, updateAlarm, toggleAlarm, pauseAlarms, skipToday, deleteAlarms])
 
   return <AlarmStoreContext.Provider value={value}>{children}</AlarmStoreContext.Provider>
 }

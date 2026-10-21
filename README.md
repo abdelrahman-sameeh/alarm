@@ -1,4 +1,4 @@
-# Alarm Masry
+# alarm
 
 تطبيق منبه Android بواجهة عربية مصرية وDark Mode، مبني بـReact + Vite ومغلف كتطبيق Native باستخدام Capacitor.
 
@@ -78,8 +78,8 @@ scripts/         سكربتات البناء وتوليد الرنات
 أي Tag بالشكل `v*` يشغل Workflow ويبني APK ويرفقه في GitHub Release:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
 نسخة GitHub الحالية Debug ومناسبة للتجربة والتثبيت المباشر. قبل النشر على Google Play يلزم Keystore خاص بالمشروع وRelease signing.

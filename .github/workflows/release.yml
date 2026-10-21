@@ -28,13 +28,13 @@ jobs:
       - run: npm ci
       - run: npm run android:apk
       - name: Name APK
-        run: cp android/app/build/outputs/apk/debug/app-debug.apk "Alarm-Masry-${GITHUB_REF_NAME}.apk"
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk "alarm-${GITHUB_REF_NAME}.apk"
       - uses: actions/upload-artifact@v4
         with:
-          name: Alarm-Masry-${{ github.ref_name }}
-          path: Alarm-Masry-${{ github.ref_name }}.apk
+          name: alarm-${{ github.ref_name }}
+          path: alarm-${{ github.ref_name }}.apk
       - name: Publish GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" "Alarm-Masry-${GITHUB_REF_NAME}.apk" --generate-notes --title "Alarm Masry $GITHUB_REF_NAME"
+        run: gh release create "$GITHUB_REF_NAME" "alarm-${GITHUB_REF_NAME}.apk" --generate-notes --title "alarm $GITHUB_REF_NAME"

@@ -38,6 +38,7 @@ export function HomePage() {
             onSelect={() => setSelected((current) => current.includes(alarm.id)
               ? current.filter((selectedId) => selectedId !== alarm.id)
               : [...current, alarm.id])}
+            onStartSelection={() => { setSelecting(true); setSelected([alarm.id]) }}
             onToggle={() => toggleAlarm(alarm.id)}
           />
         ))}

@@ -2,12 +2,12 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.alarm.masry',
-  appName: 'Alarm Masry',
+  appName: 'alarm',
   webDir: 'dist',
   plugins: {
     LocalNotifications: {
       smallIcon: 'alarm_notification',
-      iconColor: '#D7FF68',
+      iconColor: '#E7E8E6',
     },
   },
 }
